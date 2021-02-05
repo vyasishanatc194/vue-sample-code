@@ -1,0 +1,157 @@
+<template>
+
+  <page-box
+    :title="$t( getMode == 'edit-single' ?
+      'admin.user.edit.title_single' : 'admin.user.edit.title_multiple')"
+   class="adminUserEditBox">
+
+    <!-- New or edit component -->
+    <!-- v-if="listLoaded" is to prevent create-edit component to
+      access the user store before the user list be loaded -->
+    <create-edit v-if="listLoaded" ref="createEdit" :query-string="queryString"
+      :mode="getMode" :user-rows="userRows"
+      @submit="onSave" @invalid-parameters="onCreateEditInvalidParameter">
+    </create-edit>
+
+    <!-- Bottom button -->
+    <div slot="footer" class="row justify-end">
+      <q-btn color="secondary"
+        @click.prevent="handleCancel">{{ $t('admin.user.edit.cancel') }}
+      </q-btn>
+      <q-btn color="primary"
+        @click.prevent="save" :disable="saveInProgress">{{ $t('admin.user.edit.save') }}
+      </q-btn>
+    </div>
+
+  </page-box>
+
+</template>
+
+<script>
+import _ from 'lodash';
+import { mapState } from 'vuex';
+import { PageBox } from 'src/common/components/PageBox';
+import utilMisc from 'src/common/utils/misc';
+import CreateEdit from './Components/CreateEdit';
+
+export default {
+  name: 'admin-user-edit',
+  components: {
+    PageBox,
+    CreateEdit,
+  },
+  props: {
+    queryString: {
+      required: true,
+      type: Object,
+    },
+  },
+  data() {
+    return {
+      saveInProgress: false,
+    };
+  },
+  created() {
+    // If user list is not already loaded, load it
+    let p;
+    if (!this.listLoading && !this.listLoaded) {
+      p = this.$store.dispatch('admin/user/getList');
+    } else {
+      p = Promise.resolve();
+    }
+    p.catch((error) => {
+      this.$q.notify({
+        color: 'negative',
+        message: error.message || error,
+        icon: 'report_problem',
+      });
+    });
+  },
+  computed: {
+    ...mapState('admin/user', {
+      userRows: state => state.userRows,
+      listLoading: state => state.listLoading,
+      listLoaded: state => state.listLoaded,
+    }),
+    // Get component edit mode
+    getMode() {
+      return this.queryString.ids && this.queryString.ids.split(',').length > 1
+        ? 'edit-bulk'
+        : 'edit-single';
+    },
+  },
+  methods: {
+    // CreateEdit component get invalid parameters
+    onCreateEditInvalidParameter() {
+      // Go back to user's list page
+      this.handleCancel();
+    },
+    onSave(data) {
+      // While on edit-bulk we received an array of object
+      // instead of a plain object
+      // Operation :
+      // 1. Convert all keys to snake case
+      this.saveInProgress = true;
+      let d;
+      if (this.getMode === 'edit-bulk') {
+        d = _.map(data, (x) => {
+          const v = _(x)
+            .cloneDeep();
+          return utilMisc.propertyKeyToSnakeCase(v);
+        });
+      } else {
+        d = _(data)
+          .cloneDeep();
+        d = utilMisc.propertyKeyToSnakeCase(d);
+      }
+
+      // Send request to store
+      this.$store
+        .dispatch('admin/user/edit', d)
+        .then(() => {
+          // Warn with a positive toast
+          let t;
+          if (this.getMode === 'edit-bulk') {
+            t = this.$t('admin.user.edit.usersEditedSuccessfully');
+          } else {
+            t = this.$t('admin.user.edit.userEditedSuccessfully', {
+              name: d.name,
+            });
+          }
+          this.$q.notify({
+            timeout: this.$alertTimeoutMs,
+            color: 'positive',
+            message: t,
+            icon: 'thumb_up',
+          });
+
+          // Go back to list page
+          this.$router.push({ path: '../user' });
+        })
+        .catch((error) => {
+          this.$q.notify({
+            color: 'negative',
+            message: error.message || error,
+            icon: 'report_problem',
+          });
+        })
+        .then(() => {
+          this.saveInProgress = false;
+        });
+    },
+    handleCancel() {
+      this.$router.push({ path: '../user' });
+    },
+    save() {
+      this.$refs.createEdit.validateFormAndEmitHandler();
+    },
+  },
+};
+</script>
+
+<style lang="stylus" scoped>
+.adminUserEditBox {
+  max-width: 70rem;
+  margin: 0 auto;
+}
+</style>

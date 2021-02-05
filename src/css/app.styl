@@ -1,0 +1,45 @@
+// App global css
+
+// Override app default title sizes
+h1 {
+   font-size: 2.0rem;
+}
+h2 {
+    font-size: 1.5rem;
+}
+h3 {
+    font-size: 1.2rem;
+}
+
+// Override app default table styles
+.q-table {
+  th, td {
+    // padding:  7px 16px;
+    padding: 0.3rem 0.6rem;
+  }
+
+  thead tr, tbody td {
+    height: 2.5rem;
+  }
+}
+
+// Override selected item to increase the contrast
+.q-item--active {
+  font-weight: bold;
+}
+
+// Override Label Color
+label {
+  color: $label-color;
+}
+
+// Label Caption
+.label-caption {
+  word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+  padding: 0rem;
+  color: $field-hint-color;
+  font-size: 0.8rem;
+}

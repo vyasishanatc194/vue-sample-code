@@ -1,0 +1,100 @@
+# ############################################################################
+# Stages
+# Group jobs into different stages
+# https://docs.gitlab.com/ee/ci/yaml/#stage
+# ############################################################################
+stages:
+  # The code lint
+  - lint
+
+  # Building the modules package(s).
+  - package
+
+
+# ############################################################################
+# Hidden job: Preparing nodejs images
+# ############################################################################
+.nodejs_image:
+  # GitLab uses docker in the background
+  # https://hub.docker.com/r/library/node/tags/
+  image: node:12.13.0
+
+  # List of files and directories which should be cached between jobs
+  # http
+  cache:
+    paths:
+      - node_modules/
+
+
+# ############################################################################
+# Hidden job: Preparing an image to build package
+# ############################################################################
+.package_image:
+  # Inherit from nodejs_image
+  extends: .nodejs_image
+
+  # Install package building tools/dependencies
+  before_script:
+    - apt-get update -qy
+    - apt-get install -qy python g++ make checkinstall fakeroot jq
+
+
+# ############################################################################
+# Job: Lint process
+# ############################################################################
+lint:
+  # Inherit from nodejs_image
+  extends: .nodejs_image
+
+  # Will be run on the lint stage
+  stage: lint
+
+  only:
+    # Run only when when a merge request is created or updated
+    - merge_requests
+
+  script:
+    - yarn install
+    - yarn lint:nofix
+
+
+# ############################################################################
+# Job: Build the debian packages
+# ############################################################################
+package:deb:
+  # Inherit from package_image
+  extends: .package_image
+
+  # Will be run on the package stage
+  stage: package
+
+  only:
+    # Run only when the pipeline is requested on the website,for a push on
+    # the master branch, or for a schedule.
+    - web
+    - schedules
+
+  script:
+    # Parse actual version from each package.json files
+    # Regular expression is the official found on
+    #   * https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    # It has been converted to GNU ERE with RegexBuddy
+    # Also a special attention has been paid to YAML limitation regarding special characters.
+    #   * https://docs.gitlab.com/ee/ci/yaml/README.html#script
+    - VERSION_PROPERTY='"version":'
+    - SEMVER_REGEX='(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)(-((0|[1-9][[:digit:]]*|[[:digit:]]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][[:digit:]]*|[[:digit:]]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?'
+    - VERSION_REGEX="${VERSION_PROPERTY} \"${SEMVER_REGEX}\""
+    - BUILD_TIMESTAMP="$(date +%s)"
+    - VERSION_WITH_BUILD_METADATA="${VERSION_PROPERTY} \"\\1.\\2.\\3+${CI_JOB_ID}.${BUILD_TIMESTAMP}.${CI_COMMIT_SHA:0:8}\""
+    - sed -r -i "s/${VERSION_REGEX}/${VERSION_WITH_BUILD_METADATA}/" package.json
+    - yarn install
+    - yarn pkg:deb
+
+  # Specify a list of files and directories which should be attached to the job
+  # https://docs.gitlab.com/ee/ci/yaml/#artifacts
+  artifacts:
+    paths:
+      - "*.deb"
+    # Indicate how long artifacts should live before they expire and therefore deleted
+    # https://docs.gitlab.com/ee/ci/yaml/#artifactsexpire_in
+    expire_in: 2 days

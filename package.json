@@ -1,0 +1,68 @@
+{
+  "name": "sample-project",
+  "version": "2.5.0",
+  "description": "sample Project",
+  "license": "Intelia",
+  "homepage": "",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "sample"
+  ],
+  "private": true,
+  "scripts": {
+    "lint": "eslint --fix --ext .js,.vue .",
+    "lint:nofix": "eslint --ext .js,.vue .",
+    "test": "echo \"No test specified\" && exit 0",
+    "build": "quasar build",
+    "dev": "quasar dev",
+    "pkg:deb": "npm run build && node scripts/make-deb.js"
+  },
+  "dependencies": {
+    "@amcharts/amcharts4": "^4.10.12",
+    "@iconscout/vue-unicons": "^0.0.2",
+    "@quasar/extras": "^1.3.2",
+    "@quasar/quasar-ui-qcalendar": "^3.0.1",
+    "axios": "^0.19.0",
+    "bluebird": "^3.7.1",
+    "dygraphs": "^2.1.0",
+    "exceljs": "^3.0.0",
+    "jwt-decode": "^2.2.0",
+    "leaflet": "^1.6.0",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.27",
+    "numeric": "^1.2.6",
+    "quasar": "^1.1.6",
+    "vue-analytics": "^5.20.1",
+    "vue-croppa": "^1.3.8",
+    "vue-flag-icon": "^1.0.6",
+    "vue-i18n": "^8.18.2",
+    "vue-imask": "^6.0.5",
+    "vue-scroll-behavior": "^0.2.0",
+    "vue-scrollto": "^2.15.0",
+    "vue2-leaflet": "^2.5.2",
+    "vuelidate": "^0.7.4",
+    "xlsx-populate": "^1.14.0"
+  },
+  "devDependencies": {
+    "@quasar/app": "1.1.3",
+    "@vue/eslint-config-airbnb": "^4.0.1",
+    "babel-eslint": "^10.0.3",
+    "eslint": "^5.16.0",
+    "eslint-friendly-formatter": "^4.0.1",
+    "eslint-loader": "^2.2.1",
+    "eslint-plugin-vue": "^5.2.3"
+  },
+  "engines": {
+    "node": ">= 12.13.0",
+    "npm": ">= 6.13.0",
+    "yarn": ">= 1.19.1"
+  },
+  "browserslist": [
+    "last 1 version, not dead, ie >= 11"
+  ]
+}
